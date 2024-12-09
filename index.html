@@ -1,0 +1,35 @@
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="container">
+
+    <img class="logo" src="logo.png" alt="image">
+    <form id="loginForm">
+      <label for="username">User Name</label>
+      <input type="text" id="username" placeholder="Username" >
+      <label for="username">Password</label>
+      <input type="password" id="password" placeholder="Password" >
+      <button  class="login" type="submit">Login</button><br>
+    </form>
+    <a href="register.html">Don't have an account? Register here</a>
+  </div>
+<script>
+      document.getElementById("loginForm")?.addEventListener("submit", (e) => {
+      e.preventDefault();
+      // Show success message and redirect
+      alert("Login successful!");
+      window.location.href = "Aptitude.html";  // Navigate to aptitude page after login
+    });
+  </script>
+</body>
+</html>

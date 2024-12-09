@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz with Pagination</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .result-container {
+            background-color: white;
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            
+            width: 800px;
+            overflow-y: auto;
+            max-height: 80vh;
+        }
+        h1 {
+            text-align: center;
+        }
+        .question {
+            margin: 20px 0;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+        }
+        .correct {
+            color: green;
+            font-weight: bold;
+        }
+        .incorrect {
+            color: red;
+            font-weight: bold;
+        }
+        .btn-group {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;     
+        }
+        .pre-btn, .nxt-btn {
+            padding: 10px 20px;
+            margin-top: 10px;
+            border: none;
+            background-color: rgb(0, 183, 255);
+            color: whitesmoke;
+            cursor: pointer;
+            border-radius: 5px;   
+        }
+        .nxt-btn:hover, .pre-btn:hover {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .nxt-btn:active, .pre-btn:active {
+            background-color: green;
+            color: black;           
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="result-container">
+        <!-- Quiz Section -->
+        <div id="quiz-page">
+            <h1>Quiz</h1>
+            <div id="quiz-container"></div>
+            <div class="btn-group">
+                <button id="prev-btn" class="pre-btn hidden">Previous</button>
+                <button id="next-btn" class="nxt-btn">Next</button>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div id="results-page" class="hidden">
+            <h1>Results</h1>
+            <div id="results"></div>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            // HTML Qustions
+            { question: "What does HTML stand for?", choices: ["Hyper Text Markup Language", "Home Tool Markup Language", "Hyperlinks and Text Markup Language", "Hyperlinks Text Language"], answer: "Hyper Text Markup Language" },
+            { question: "Which tag is used to create a hyperlink in HTML?", choices: ["&lt;a&gt;", "&lt;link&gt;", "&lt;href&gt;", "&lt;url&gt;"], answer: "&lt;a&gt;" },
+            { question: "Which property is used to create space between the border and content of an element in CSS?", choices: ["margin", "padding", "content-spacing", "border-spacing"], answer: "padding" },
+            { question: "Which HTML attribute specifies an alternate text for an image?", choices: ["alt", "title", "src", "longdesc"], answer: "alt" },
+            { question: "What does the z-index property control in CSS?", choices: ["The font size of an element", "The stacking order of elements", "The position of an element", "The color of an element"], answer: "The stacking order of elements" },
+            // CSS Questions
+            { question: "What does CSS stand for?", choices: ["Cascading Style Sheets", "Creative Style Sheets", "Colorful Style Sheets", "Computer Style Sheets"], answer: "Cascading Style Sheets" },
+            { question: "Which property is used to change the background color in CSS?", choices: ["color", "bgcolor", "background-color", "background"], answer: "background-color" },
+            { question: "Which CSS property controls the text size?", choices: ["font-size", "text-size", "text-style", "font-style"], answer: "font-size" },
+            { question: "How do you make a list not display bullet points in CSS?", choices: ["list-style: none", "bullet: none", "text-decoration: none", "display: none"], answer: "list-style: none" },
+            { question: "Which property is used to make the text bold?", choices: ["font-weight", "text-bold", "font-style", "bold"], answer: "font-weight" },
+
+            // JavaScript Questions
+            { question: "Which of the following is a JavaScript data type?", choices: ["Number", "Text", "HTML", "CSS"], answer: "Number" },
+            { question: "Which symbol is used for comments in JavaScript?", choices: ["//", "#", "/* */", "!-- --"], answer: "//" },
+            { question: "What is the output of '2' + 2 in JavaScript?", choices: ["4", "'22'", "NaN", "Undefined"], answer: "'22'" },
+            { question: "How do you declare a variable in JavaScript?", choices: ["var", "let", "const", "All of the above"], answer: "All of the above" },
+            { question: "Which JavaScript keyword is used to define a function?", choices: ["function", "method", "func", "define"], answer: "function" },
+
+            // Aptitude Questions
+            { question: "What is 25% of 200?", choices: ["50", "25", "100", "75"], answer: "50" },
+            { question: "If 2x = 10, what is the value of x?", choices: ["2", "5", "10", "20"], answer: "5" },
+            { question: "Solve: 15 ÷ 3 + 2 × 4 = ?", choices: ["14", "10", "11", "8"], answer: "14" },
+            { question: "What is the square root of 144?", choices: ["10", "11", "12", "14"], answer: "12" },
+            { question: "A train travels 100 km in 2 hours. What is its speed?", choices: ["50 km/hr", "100 km/hr", "200 km/hr", "25 km/hr"], answer: "50 km/hr" }
+        ];
+
+        const quizContainer = document.getElementById("quiz-container");
+        const quizPage = document.getElementById("quiz-page");
+        const resultsPage = document.getElementById("results-page");
+        const resultsDiv = document.getElementById("results");
+        const nextBtn = document.getElementById("next-btn");
+        const prevBtn = document.getElementById("prev-btn");
+
+        let currentPage = 0;
+        const questionsPerPage = 5;
+        const totalPages = Math.ceil(questions.length / questionsPerPage);
+        let userAnswers = [];
+
+        function renderQuestions() {
+            quizContainer.innerHTML = "";
+            const start = currentPage * questionsPerPage;
+            const end = start + questionsPerPage;
+
+            questions.slice(start, end).forEach((q, index) => {
+                const questionDiv = document.createElement("div");
+                questionDiv.classList.add("question");
+
+                const questionText = document.createElement("p");
+                questionText.innerHTML = `${start + index + 1}. ${q.question}`;
+                questionDiv.appendChild(questionText);
+
+                q.choices.forEach(choice => {
+                    const option = document.createElement("div");
+                    const radio = document.createElement("input");
+                    radio.type = "radio";
+                    radio.name = `question${start + index}`;
+                    radio.value = choice;
+                    radio.id = `question${start + index}_${choice}`;
+                    
+                    // Retain previously selected answer
+                    if (userAnswers[start + index] === choice) {
+                        radio.checked = true;
+                    }
+
+                    const label = document.createElement("label");
+                    label.htmlFor = radio.id;
+                    label.innerHTML = choice;
+                    option.appendChild(radio);
+                    option.appendChild(label);
+                    questionDiv.appendChild(option);
+                });
+
+                quizContainer.appendChild(questionDiv);
+            });
+
+            nextBtn.textContent = currentPage + 1 === totalPages ? "Submit" : "Next";
+            prevBtn.classList.toggle("hidden", currentPage === 0);
+        }
+
+        nextBtn.addEventListener("click", () => {
+            const start = currentPage * questionsPerPage;
+            const end = start + questionsPerPage;
+
+            for (let i = start; i < end; i++) {
+                const selected = document.querySelector(`input[name="question${i}"]:checked`);
+                userAnswers[i] = selected ? selected.value : "No Answer";
+            }
+
+            if (currentPage + 1 === totalPages) {
+                displayResults();
+            } else {
+                currentPage++;
+                renderQuestions();
+            }
+        });
+
+        prevBtn.addEventListener("click", () => {
+            currentPage--;
+            renderQuestions();
+        });
+
+        function displayResults() {
+            quizPage.classList.add("hidden");
+            resultsPage.classList.remove("hidden");
+
+            resultsDiv.innerHTML = "";
+            let correctCount = 0;
+
+            questions.forEach((q, index) => {
+                const isCorrect = userAnswers[index] === q.answer;
+                const resultDiv = document.createElement("div");
+                resultDiv.classList.add("question");
+
+                const questionText = document.createElement("p");
+                questionText.innerHTML = `${index + 1}. ${q.question}`;
+                resultDiv.appendChild(questionText);
+
+                const userAnswerText = document.createElement("p");
+                userAnswerText.innerHTML = `Your Answer: <span class="${isCorrect ? 'correct' : 'incorrect'}">${userAnswers[index]}</span>`;
+                resultDiv.appendChild(userAnswerText);
+
+                const correctAnswerText = document.createElement("p");
+                correctAnswerText.innerHTML = `Correct Answer: <span class="correct">${q.answer}</span>`;
+                resultDiv.appendChild(correctAnswerText);
+
+                if (isCorrect) correctCount++;
+
+                resultsDiv.appendChild(resultDiv);
+            });
+            
+            const scoreMessage = document.createElement("h3");
+            if (correctCount <= 10) {
+                scoreMessage.textContent = "Better Luck Next Time";
+                scoreMessage.style.color = "green";  // Optional: Style the message
+            } else if (correctCount <= 15) {
+                scoreMessage.textContent = "Good";
+                scoreMessage.style.color = "green";  // Optional: Style the message
+            } else {
+                scoreMessage.textContent = "Excellent";
+                scoreMessage.style.color = "green";  // Optional: Style the message
+            }
+            resultsDiv.prepend(scoreMessage);
+
+            const scoreText = document.createElement("h2");
+            scoreText.textContent = `Your Score: ${correctCount} / ${questions.length}`;
+            resultsDiv.prepend(scoreText);
+        }
+
+        renderQuestions();
+    </script>
+</body>
+</html>
